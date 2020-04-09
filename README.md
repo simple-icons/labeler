@@ -14,6 +14,8 @@ The key is the name of the label in your repository that you want to add (eg: "m
 
 #### Basic Examples
 
+> Unchanged from [actions/labeler](https://github.com/actions/labeler).
+
 ```yml
 # Add 'label1' to any changes within 'example' folder or any subfolders
 label1:
@@ -25,11 +27,13 @@ label2: example2/*
 
 #### Common Examples
 
+> Unchanged from [actions/labeler](https://github.com/actions/labeler).
+
 ```yml
 # Add 'repo' label to any root file changes
 repo:
   - ./*
-  
+
 # Add '@domain/core' label to any change within the 'core' package
 @domain/core:
   - package/core/*
@@ -39,6 +43,36 @@ repo:
 test:
   - src/**/*.spec.js
 ```
+
+#### New Features
+
+> These highlight new features compared to [actions/labeler](https://github.com/actions/labeler).
+
+```yml
+# Add a `new` label for any newly added files
+new:
+  - ./**/*
+  - on: added
+
+# Add a 'changes' label for any changed files
+changes:
+  - ./**/*
+  - on: modified
+
+# Add a 'removing' label for any removed files
+removing:
+  - ./**/*
+  - on: removed
+
+# Add an 'updates' label for any newly added or changed files
+updates:
+  - ./**/*
+  - on:
+    - added
+    - modified
+```
+
+
 
 ### Create Workflow
 

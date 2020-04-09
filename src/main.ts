@@ -3,6 +3,12 @@ import * as github from '@actions/github';
 import * as yaml from 'js-yaml';
 import {Minimatch} from 'minimatch';
 
+const ALL_STATUS: string[] = ["added", "modified", "removed"];
+interface File {
+  filename: string;
+  status: string;
+}
+
 async function run() {
   try {
     const token = core.getInput('repo-token', {required: true});
@@ -17,16 +23,16 @@ async function run() {
     const client = new github.GitHub(token);
 
     core.debug(`fetching changed files for pr #${prNumber}`);
-    const changedFiles: string[] = await getChangedFiles(client, prNumber);
-    const labelGlobs: Map<string, string[]> = await getLabelGlobs(
+    const changedFiles: File[] = await getChangedFiles(client, prNumber);
+    const labelGlobs: Map<string, [string[], string[]]> = await getLabelGlobs(
       client,
       configPath
     );
 
     const labels: string[] = [];
-    for (const [label, globs] of labelGlobs.entries()) {
-      core.debug(`processing ${label}`);
-      if (checkGlobs(changedFiles, globs)) {
+    for (const [label, [globs, status]] of labelGlobs.entries()) {
+      core.debug(`processing ${label} (${globs} | ${status})`);
+      if (checkGlobs(changedFiles, globs, status)) {
         labels.push(label);
       }
     }
@@ -52,18 +58,21 @@ function getPrNumber(): number | undefined {
 async function getChangedFiles(
   client: github.GitHub,
   prNumber: number
-): Promise<string[]> {
+): Promise<File[]> {
   const listFilesResponse = await client.pulls.listFiles({
     owner: github.context.repo.owner,
     repo: github.context.repo.repo,
     pull_number: prNumber
   });
 
-  const changedFiles = listFilesResponse.data.map(f => f.filename);
+  const changedFiles = listFilesResponse.data.map(f => ({
+    filename: f.filename,
+    status: f.status
+  }));
 
   core.debug('found changed files:');
   for (const file of changedFiles) {
-    core.debug('  ' + file);
+    core.debug(`  ${file.filename} (${file.status})`);
   }
 
   return changedFiles;
@@ -72,7 +81,7 @@ async function getChangedFiles(
 async function getLabelGlobs(
   client: github.GitHub,
   configurationPath: string
-): Promise<Map<string, string[]>> {
+): Promise<Map<string, [string[], string[]]>> {
   const configurationContent: string = await fetchContent(
     client,
     configurationPath
@@ -99,13 +108,28 @@ async function fetchContent(
   return Buffer.from(response.data.content, response.data.encoding).toString();
 }
 
-function getLabelGlobMapFromObject(configObject: any): Map<string, string[]> {
-  const labelGlobs: Map<string, string[]> = new Map();
+function getLabelGlobMapFromObject(
+  configObject: any
+): Map<string, [string[], string[]]> {
+  const labelGlobs: Map<string, [string[], string[]]> = new Map();
   for (const label in configObject) {
     if (typeof configObject[label] === 'string') {
-      labelGlobs.set(label, [configObject[label]]);
+      labelGlobs.set(label, [[configObject[label]], ALL_STATUS]);
     } else if (configObject[label] instanceof Array) {
-      labelGlobs.set(label, configObject[label]);
+      const globs: string[] = [];
+      let status: string[] = ALL_STATUS;
+      for (const temp in configObject[label]) {
+        if (typeof configObject[label][temp] === "string") {
+          globs.push(configObject[label][temp]);
+        } else if (typeof configObject[label][temp]["on"] === "string") {
+          status = [configObject[label][temp]["on"]];
+        } else if (Array.isArray(configObject[label][temp]["on"])) {
+          status = configObject[label][temp]["on"];
+        } else {
+          throw Error(`found unexpected ...`);
+        }
+      }
+      labelGlobs.set(label, [globs, status]);
     } else {
       throw Error(
         `found unexpected type for label ${label} (should be string or array of globs)`
@@ -116,14 +140,21 @@ function getLabelGlobMapFromObject(configObject: any): Map<string, string[]> {
   return labelGlobs;
 }
 
-function checkGlobs(changedFiles: string[], globs: string[]): boolean {
+function checkGlobs(
+  changedFiles: File[],
+  globs: string[],
+  status: string[]
+): boolean {
   for (const glob of globs) {
-    core.debug(` checking pattern ${glob}`);
+    core.debug(` checking pattern ${glob} for status [${status}]`);
     const matcher = new Minimatch(glob);
     for (const changedFile of changedFiles) {
-      core.debug(` - ${changedFile}`);
-      if (matcher.match(changedFile)) {
-        core.debug(` ${changedFile} matches`);
+      core.debug(` - ${changedFile.filename}`);
+      if (
+        matcher.match(changedFile.filename) &&
+        status.includes(changedFile.status)
+      ) {
+        core.debug(` ${changedFile.filename} matches glob and status`);
         return true;
       }
     }
