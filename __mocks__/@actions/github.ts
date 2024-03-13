@@ -5,8 +5,8 @@ export const context = {
     },
   },
   repo: {
-    owner: "monalisa",
-    repo: "helloworld",
+    owner: 'monalisa',
+    repo: 'helloworld',
   },
 };
 
