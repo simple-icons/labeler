@@ -1,7 +1,7 @@
-import * as core from "@actions/core";
-import * as github from "@actions/github";
-import * as yaml from "js-yaml";
-import { Minimatch, IMinimatch } from "minimatch";
+import * as core from '@actions/core';
+import * as github from '@actions/github';
+import * as yaml from 'js-yaml';
+import { Minimatch, IMinimatch } from 'minimatch';
 
 interface MatchConfig {
   all?: string[];
@@ -18,13 +18,13 @@ type StringOrMatchConfig = string | MatchConfig;
 
 export async function run() {
   try {
-    const token = core.getInput("repo-token", { required: true });
-    const configPath = core.getInput("configuration-path", { required: true });
-    const syncLabels = !!core.getInput("sync-labels", { required: false });
+    const token = core.getInput('repo-token', { required: true });
+    const configPath = core.getInput('configuration-path', { required: true });
+    const syncLabels = !!core.getInput('sync-labels', { required: false });
 
     const prNumber = getPrNumber();
     if (!prNumber) {
-      console.log("Could not get pull request number from context, exiting");
+      console.log('Could not get pull request number from context, exiting');
       return;
     }
 
@@ -92,9 +92,9 @@ async function getChangedFiles(
     status: f.status,
   }));
 
-  core.debug("found changed files:");
+  core.debug('found changed files:');
   for (const file of changedFiles) {
-    core.debug("  " + file.filename);
+    core.debug('  ' + file.filename);
   }
 
   return changedFiles;
@@ -135,7 +135,7 @@ function getLabelGlobMapFromObject(
 ): Map<string, StringOrMatchConfig[]> {
   const labelGlobs: Map<string, StringOrMatchConfig[]> = new Map();
   for (const label in configObject) {
-    if (typeof configObject[label] === "string") {
+    if (typeof configObject[label] === 'string') {
       labelGlobs.set(label, [configObject[label]]);
     } else if (configObject[label] instanceof Array) {
       labelGlobs.set(label, configObject[label]);
@@ -150,16 +150,16 @@ function getLabelGlobMapFromObject(
 }
 
 function toMatchConfig(config: StringOrMatchConfig): MatchConfig {
-  const allStatuses = ["added", "modified", "removed"];
+  const allStatuses = ['added', 'modified', 'removed'];
 
-  if (typeof config === "string") {
+  if (typeof config === 'string') {
     return {
       any: [config],
       status: allStatuses,
     };
   }
 
-  if (typeof config.status === "string") {
+  if (typeof config.status === 'string') {
     config.status = [config.status];
   } else if (!Array.isArray(config.status)) {
     config.status = allStatuses;
@@ -169,7 +169,7 @@ function toMatchConfig(config: StringOrMatchConfig): MatchConfig {
 }
 
 function printPattern(matcher: IMinimatch): string {
-  return (matcher.negate ? "!" : "") + matcher.pattern;
+  return (matcher.negate ? '!' : '') + matcher.pattern;
 }
 
 export function checkGlobs(
