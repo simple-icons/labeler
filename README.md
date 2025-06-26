@@ -1,10 +1,6 @@
 # Pull Request Labeler
 
-<p align="left">
-  <a href="https://github.com/actions/labeler/actions?query=workflow%3A%22Build+%26+Test%22++">
-    <img alt="build and test status" src="https://github.com/actions/labeler/actions/workflows/build_test.yml/badge.svg">
-  </a>
-</p>
+[![Build & Test](https://github.com/simple-icons/labeler/actions/workflows/build_test.yml/badge.svg)](https://github.com/simple-icons/labeler/actions/workflows/build_test.yml)
 
 Automatically label new pull requests based on the paths of files being changed.
 
@@ -28,15 +24,19 @@ For more control over matching, you can provide a match object instead of a simp
 One or both fields can be provided for fine-grained matching. Unlike the top-level list, the list of path globs provided to `any` and `all` must ALL match against a path for the label to be applied.
 
 The fields are defined as follows:
+
 * `any`: match ALL globs against ANY changed path
 * `all`: match ALL globs against ALL changed paths
 
 A simple path glob is the equivalent to `any: ['glob']`. More specifically, the following two configurations are equivalent:
+
 ```yml
 label1:
 - example1/*
 ```
+
 and
+
 ```yml
 label1:
 - any: ['example1/*']
@@ -90,14 +90,16 @@ new-test:
 
 Create a workflow (eg: `.github/workflows/labeler.yml` see [Creating a Workflow file](https://help.github.com/en/articles/configuring-a-workflow#creating-a-workflow-file)) to utilize the labeler action with content:
 
-```
+```yaml
 name: "Pull Request Labeler"
 on:
-- pull_request_target
+  - pull_request_target
 
 jobs:
   triage:
     runs-on: ubuntu-latest
+    permissions:
+      pull-requests: write
     steps:
     - uses: actions/labeler@v3
       with:
@@ -114,8 +116,19 @@ Various inputs are defined in [`action.yml`](action.yml) to let you configure th
 | - | - | - |
 | `repo-token` | Token to use to authorize label changes. Typically the GITHUB_TOKEN secret | N/A |
 | `configuration-path` | The path to the label configuration file | `.github/labeler.yml` |
-| `sync-labels` | Whether or not to remove labels when matching files are reverted or no longer changed by the PR | `false`
+| `sync-labels` | Whether or not to remove labels when matching files are reverted or no longer changed by the PR | `false` |
 
-# Contributions
+### Recommended permissions
+
+When using the `simple-icons/labeler` action in your GitHub Actions workflow, it is recommended to set the following permissions to ensure proper functionality:
+
+```yaml
+permissions:
+  contents: read
+  pull-requests: write
+  issues: write
+```
+
+## Contributions
 
 Contributions are welcome! See the [Contributor's Guide](CONTRIBUTING.md).
