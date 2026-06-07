@@ -1,3 +1,5 @@
+import { jest } from '@jest/globals';
+
 export const context = {
   payload: {
     pull_request: {

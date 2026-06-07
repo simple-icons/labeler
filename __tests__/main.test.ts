@@ -1,11 +1,8 @@
-import { run } from '../src/labeler';
+import { jest } from '@jest/globals';
+import { readFileSync } from 'node:fs';
+import { run } from '../src/labeler.js';
 import { getOctokit } from '@actions/github';
 import * as core from '@actions/core';
-
-const fs = jest.requireActual('fs');
-
-jest.mock('@actions/core');
-jest.mock('@actions/github');
 
 const gh = getOctokit('token');
 const addLabelsMock = jest.spyOn(gh.rest.issues, 'addLabels');
@@ -13,9 +10,13 @@ const removeLabelMock = jest.spyOn(gh.rest.issues, 'removeLabel');
 const reposMock = jest.spyOn(gh.rest.repos, 'getContent');
 const paginateMock = jest.spyOn(gh, 'paginate');
 const getPullMock = jest.spyOn(gh.rest.pulls, 'get');
+const getInputMock = core.getInput as jest.MockedFunction<typeof core.getInput>;
+const getBooleanInputMock = core.getBooleanInput as jest.MockedFunction<
+  typeof core.getBooleanInput
+>;
 
 const yamlFixtures = {
-  'only_pdfs.yml': fs.readFileSync('__tests__/fixtures/only_pdfs.yml'),
+  'only_pdfs.yml': readFileSync('__tests__/fixtures/only_pdfs.yml'),
 };
 
 afterAll(() => jest.restoreAllMocks());
@@ -53,17 +54,15 @@ describe('run', () => {
       'configuration-path': 'bar',
     };
 
-    jest
-      .spyOn(core, 'getInput')
-      .mockImplementation((name: string, ...opts) => mockInput[name]);
-    
+    getInputMock.mockImplementation((name: string, ...opts) => mockInput[name]);
+
     const mockBooleanInput = {
       'sync-labels': true,
     };
 
-    jest
-      .spyOn(core, 'getBooleanInput')
-      .mockImplementation((name: string, ...opts) => mockBooleanInput[name]);
+    getBooleanInputMock.mockImplementation(
+      (name: string, ...opts) => mockBooleanInput[name],
+    );
 
     usingLabelerConfigYaml('only_pdfs.yml');
     mockGitHubResponseChangedFiles('foo.txt');
@@ -91,17 +90,15 @@ describe('run', () => {
       'configuration-path': 'bar',
     };
 
-    jest
-      .spyOn(core, 'getInput')
-      .mockImplementation((name: string, ...opts) => mockInput[name]);
-    
+    getInputMock.mockImplementation((name: string, ...opts) => mockInput[name]);
+
     const mockBooleanInput = {
       'sync-labels': false,
     };
 
-    jest
-      .spyOn(core, 'getBooleanInput')
-      .mockImplementation((name: string, ...opts) => mockBooleanInput[name]);
+    getBooleanInputMock.mockImplementation(
+      (name: string, ...opts) => mockBooleanInput[name],
+    );
 
     usingLabelerConfigYaml('only_pdfs.yml');
     mockGitHubResponseChangedFiles('foo.txt');

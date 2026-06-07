@@ -1,14 +1,4 @@
-import { checkGlobs } from '../src/labeler';
-
-import * as core from '@actions/core';
-
-jest.mock('@actions/core');
-
-beforeAll(() => {
-  jest.spyOn(core, 'getInput').mockImplementation((name, options) => {
-    return jest.requireActual('@actions/core').getInput(name, options);
-  });
-});
+import { checkGlobs } from '../src/labeler.js';
 
 const matchConfig = [{ any: ['*.txt'], status: ['added', 'modified'] }];
 
